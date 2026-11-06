@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import path from '/ifvote-rj/';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
