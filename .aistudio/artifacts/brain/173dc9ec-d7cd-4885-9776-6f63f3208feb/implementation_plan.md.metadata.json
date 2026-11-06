@@ -1,0 +1,6 @@
+{
+  "summary": "Plano de implementação detalhado para a recriação do sistema IFVote com Firebase (Firestore, Auth, regras de segurança, cabine de votação com urna eletrônica realista, sons Web Audio e painel administrativo da comissão eleitoral).",
+  "updatedAt": "2026-11-03T14:18:48.610895463Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

@@ -1,0 +1,6 @@
+{
+  "name": "IFVote - Sistema Eletrônico de Votação",
+  "description": "Sistema moderno de votação digital para eleições estudantis, com Urna Digital auditável, encadeamento de hash SHA-256 e links remotos autorizados.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

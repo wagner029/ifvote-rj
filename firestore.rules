@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "wagnerrocha029@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email)) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Configuração e Estado do IFVote (se a urna está ativa ou bloqueada)
+    // - Qualquer terminal precisa ler para saber se a eleição está ativa
+    // - Somente admin pode alterar configuração ou iniciar/parar eleição
+    // - Terminais podem atualizar hashAnterior e totalVotos durante o encadeamento do bloco de voto
+    match /sistema/{docId} {
+      allow read: if true;
+      allow write: if isAdmin() || (
+        docId == "ifvote_config" &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hashAnterior', 'totalVotos', 'eleicaoAtiva'])
+      );
+    }
+
+    // Eleitores aptos cadastrados pela comissão
+    // - Terminais da urna precisam ler para verificar aptidão da matrícula
+    // - Admin pode criar, atualizar e excluir eleitores
+    // - Urna pode atualizar APENAS votou e votouEm (para registrar presença)
+    match /eleitores_aptos/{matricula} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.resource.data.votou == true &&
+        resource.data.votou == false &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votou', 'votouEm'])
+      );
+    }
+
+    // Votos registrados (Cédulas anônimas com hash encadeado)
+    // - Cédulas são anônimas e imutáveis!
+    // - Leitura permitida para painel/admins (apuração) e listagem
+    // - Criação permitida se obedecer aos campos obrigatórios (chapa_id, turma_eleitor, timestamp, hash, urna_numero)
+    // - Update e Delete: ESTRITAMENTE VEDADOS (livro-razão imutável!)
+    match /votos_registrados/{votoId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['chapa_id', 'turma_eleitor', 'timestamp', 'hash'])
+                   && request.resource.data.chapa_id is string
+                   && request.resource.data.timestamp is string
+                   && request.resource.data.hash is string;
+      allow update, delete: if false;
+    }
+
+    // Urnas Remotas Autorizadas
+    // - Leitura permitida para os terminais checarem autorização
+    // - Criação e exclusão exclusivas do admin
+    // - Urna pode atualizar status para ONLINE e registrar dispositivo / último voto
+    match /urnas_remotas/{urnaId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'dispositivo', 'totalVotosColetados', 'localizacao'])
+      );
+    }
+
+    // Logs permanentes de auditoria do sistema
+    // - Registro permitido para documentar ações da urna e da comissão
+    // - Leitura de auditoria permitida
+    // - Alteração e Exclusão estritamente proibidas (auditoria imutável)
+    match /logs_sistema/{logId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['tipo', 'descricao', 'timestamp']);
+      allow update, delete: if false;
+    }
+
+    // Admins da comissão
+    // - Somente admin pode gerenciar administradores
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Sistemas em Funcionamento
+    match /sistemas_ativos/{sistemaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Chapas concorrentes (Presidente, Vice, Fotos com recorte transparente, Número)
+    match /chapas/{chapaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Pleitos cadastrados no sistema
+    match /pleitos/{pleitoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

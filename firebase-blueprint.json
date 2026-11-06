@@ -1,0 +1,126 @@
+{
+  "entities": {
+    "Election": {
+      "title": "Election",
+      "description": "Configuração e metadados da eleição institucional",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "officeTitle": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["CONFIGURACAO", "ABERTA", "ENCERRADA"] },
+        "createdAt": { "type": "string" },
+        "openedAt": { "type": "string" },
+        "closedAt": { "type": "string" },
+        "allowedVotersCount": { "type": "number" },
+        "votedCount": { "type": "number" },
+        "zeresimaEmitted": { "type": "boolean" },
+        "createdBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["title", "officeTitle", "status", "createdBy"]
+    },
+    "Candidate": {
+      "title": "Candidate",
+      "description": "Candidato ou chapa concorrente na eleição",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string", "maxLength": 5, "pattern": "^[0-9]{2}$" },
+        "name": { "type": "string", "maxLength": 120 },
+        "ballotName": { "type": "string", "maxLength": 60 },
+        "chapa": { "type": "string", "maxLength": 80 },
+        "viceName": { "type": "string", "maxLength": 120 },
+        "photoUrl": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["number", "name", "ballotName"]
+    },
+    "Voter": {
+      "title": "Voter",
+      "description": "Eleitor cadastrado e seu estado de credenciamento e comparecimento",
+      "type": "object",
+      "properties": {
+        "identifier": { "type": "string", "maxLength": 30 },
+        "name": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "enum": ["Discente", "Docente", "TAE"] },
+        "hasVoted": { "type": "boolean" },
+        "votedAt": { "type": "string" },
+        "authorizedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["identifier", "name", "hasVoted"]
+    },
+    "Vote": {
+      "title": "Vote",
+      "description": "Cédula anônima gravada no encerramento do voto na urna",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["CANDIDATE", "BRANCO", "NULO"] },
+        "candidateNumber": { "type": "string", "maxLength": 5 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["type"]
+    },
+    "BoothSession": {
+      "title": "BoothSession",
+      "description": "Estado do terminal de votação em tempo real liberado pelo mesário",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["WAITING_AUTHORIZATION", "VOTING", "FINISHED"] },
+        "token": { "type": "string", "maxLength": 64 },
+        "authorizedAt": { "type": "string" },
+        "expiresAt": { "type": "string" }
+      },
+      "required": ["status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Registro de auditoria para operações da comissão eleitoral",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "maxLength": 80 },
+        "details": { "type": "string", "maxLength": 500 },
+        "performedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["action", "details", "performedBy"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Membro credenciado da comissão eleitoral",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 120 },
+        "name": { "type": "string", "maxLength": 120 },
+        "role": { "type": "string", "enum": ["PRESIDENTE", "MESARIO", "FISCAL"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/elections/{electionId}": {
+      "schema": "Election",
+      "description": "Dados da eleição institucional"
+    },
+    "/elections/{electionId}/candidates/{candidateId}": {
+      "schema": "Candidate",
+      "description": "Lista de candidatos cadastrados na eleição"
+    },
+    "/elections/{electionId}/voters/{voterId}": {
+      "schema": "Voter",
+      "description": "Relação de eleitores credenciados para verificação presencial"
+    },
+    "/elections/{electionId}/votes/{voteId}": {
+      "schema": "Vote",
+      "description": "Repositório de votos anônimos e invioláveis da urna"
+    },
+    "/elections/{electionId}/booth_sessions/{sessionId}": {
+      "schema": "BoothSession",
+      "description": "Sessão de controle da cabine de votação em tempo real"
+    },
+    "/elections/{electionId}/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Histórico de auditoria do pleito"
+    },
+    "/admins/{userId}": {
+      "schema": "Admin",
+      "description": "Membros autorizados da mesa receptora e comissão eleitoral"
+    }
+  }
+}
